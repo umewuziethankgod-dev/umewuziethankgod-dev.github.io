@@ -1,16 +1,36 @@
-function piLogin(){
-if(typeof Pi==='undefined'){alert('Open this inside Pi Browser app');return;}
-try{
-Pi.init({version:"2.0", sandbox:false});
-console.log('Pi SDK init OK');
-Pi.authenticate(['username']).then(function(auth){
-console.log('Auth:', auth);
-let uname = auth.user.username;
-document.getElementById('lb').innerText='@'+uname;
-alert('Welcome Pioneer @'+uname+'! You don login!');
-}).catch(function(err){
-alert('Login error: '+err);
-console.log(err);
-});
-}catch(e){alert('Error: '+e); console.log(e);}
-}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PiMarket Naija</title>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+body{margin:0;font-family:system-ui;background:#0f172a;color:white}
+header{padding:12px;background:#1e293b;display:flex;justify-content:space-between}
+#map{height:300px} .card{background:#1e293b;margin:10px;padding:12px;border-radius:10px}
+.btn{padding:8px 12px;border-radius:8px;border:none;margin-right:6px}
+.wa{background:#25D366;color:white} .dir{background:#3b82f6;color:white}
+#search{width:90%;margin:10px;padding:10px;border-radius:8px;border:none}
+</style>
+</head>
+<body>
+<header><b>PiMarket Naija</b>
+<button id="lb" onclick="piLogin()" style="background:#8b5cf6;color:white;border:none;padding:8px 14px;border-radius:8px">Connect Pi</button>
+</header>
+<input id="search" placeholder="Search food, fashion..." oninput="filterShops()">
+<div id="map"></div>
+<div id="list"></div>
+<script>
+const shops=[{name:"Mama Gold Food - Ikeja",cat:"food",lat:6.6018,lng:3.3515,wa:"2348000000001",addr:"Ikeja"},{name:"Fashion Hub - Yaba",cat:"fashion",lat:6.5095,lng:3.3792,wa:"2348000000002",addr:"Yaba"},{name:"CleanPro Fumigation - Bariga",cat:"fumigation",lat:6.5294,lng:3.3801,wa:"2348000000003",addr:"Bariga"},{name:"Lekki Real Estate",cat:"real estate",lat:6.4698,lng:3.5852,wa:"2348000000004",addr:"Lekki"}];
+var map=L.map('map').setView([6.5244,3.3792],11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+function render(list){document.getElementById('list').innerHTML='';list.forEach(s=>{L.marker([s.lat,s.lng]).addTo(map).bindPopup(s.name);document.getElementById('list').innerHTML+=`<div class="card"><b>${s.name} ✓</b><br><small>${s.addr}</small><br><br><button class="btn wa" onclick="window.open('https://wa.me/${s.wa}')>WhatsApp</button><button class="btn dir" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}')>Direction</button></div>`;});}
+render(shops);
+function filterShops(){let q=document.getElementById('search').value.toLowerCase();render(shops.filter(s=>s.name.toLowerCase().includes(q)||s.cat.includes(q)));}
+function piLogin(){if(typeof Pi==='undefined'){alert('Open inside Pi Browser');return;}Pi.init({version:"2.0",sandbox:false});Pi.authenticate(['username']).then(function(auth){let uname=auth.user.username;document.getElementById('lb').innerText='@'+uname;alert('Welcome @'+uname);}).catch(e=>alert('Login failed '+e));}
+</script>
+</body>
+</html>
