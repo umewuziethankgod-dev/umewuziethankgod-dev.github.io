@@ -1,89 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PiMarket Naija - Spend Pi Map</title>
+<title>PiMarket Naija</title>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-body{background:#f8f7ff}
-.header{background:#673ab7;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:999}
+.header{background:#673ab7;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
 .header h1{font-size:18px}
-.header button{background:white;color:#673ab7;border:none;padding:8px 14px;border-radius:20px;font-weight:bold;cursor:pointer}
-.search-bar{padding:12px;background:white;display:flex;gap:8px;position:sticky;top:52px;z-index:998;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.search-bar input{flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:20px;outline:none}
-.search-bar select{padding:10px;border:1px solid #ddd;border-radius:20px}
-#map{height:55vh;width:100%}
-.shops{padding:12px;display:grid;gap:12px}
-.shop-card{background:white;border-radius:12px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.06);border-left:4px solid #673ab7}
-.shop-card h3{font-size:15px;margin-bottom:4px}
-.shop-card .meta{font-size:12px;color:#666;margin:6px 0}
-.badge{background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
-.actions{display:flex;gap:8px;margin-top:8px}
-.actions a{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:13px;text-decoration:none;font-weight:bold}
+.header button{background:white;color:#673ab7;border:none;padding:8px 14px;border-radius:20px;font-weight:bold}
+.search{padding:10px;background:white;display:flex;gap:8px}
+.search input{flex:1;padding:10px;border:1px solid #ddd;border-radius:20px}
+.search select{padding:10px;border:1px solid #ddd;border-radius:20px}
+#map{height:380px;width:100%;background:#e0e0e0}
+.shops{padding:12px}
+.card{background:white;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-left:4px solid #673ab7}
+.badge{background:#e8f5e9;color:#2e7d32;padding:2px 6px;border-radius:8px;font-size:11px}
+.btns{display:flex;gap:8px;margin-top:8px}
+.btns a{flex:1;padding:8px;text-align:center;border-radius:8px;text-decoration:none;font-weight:bold;font-size:13px}
 .wa{background:#25D366;color:white}
-.dir{background:#673ab7;color:white}
-.add-btn{position:fixed;bottom:20px;right:20px;background:#673ab7;color:white;border:none;width:56px;height:56px;border-radius:50%;font-size:28px;box-shadow:0 4px 12px rgba(0,0,0,.3);cursor:pointer;z-index:1000}
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center;padding:20px}
-.modal.active{display:flex}
-.modal-box{background:white;border-radius:16px;padding:20px;width:100%;max-width:400px}
-.modal-box input,.modal-box select,.modal-box textarea{width:100%;padding:10px;margin:6px 0;border:1px solid #ddd;border-radius:8px}
-.modal-box button{width:100%;padding:12px;background:#673ab7;color:white;border:none;border-radius:8px;margin-top:10px;font-weight:bold;cursor:pointer}
-.pill{font-size:11px;background:#f3e5f5;color:#673ab7;padding:3px 8px;border-radius:10px}
+.di{background:#673ab7;color:white}
+.add{position:fixed;bottom:20px;right:20px;background:#673ab7;color:white;border:none;width:56px;height:56px;border-radius:50%;font-size:28px;z-index:999}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.box{background:white;border-radius:14px;padding:20px;width:100%;max-width:380px}
+.box input,.box select,.box textarea{width:100%;padding:10px;margin:5px 0;border:1px solid #ddd;border-radius:8px}
+.box button{width:100%;padding:12px;background:#673ab7;color:white;border:none;border-radius:8px;margin-top:8px;font-weight:bold}
 </style>
 </head>
 <body>
-<div class="header">
-<h1>📍 PiMarket Naija</h1>
-<button id="loginBtn" onclick="piLogin()">Connect Pi</button>
-</div>
-<div class="search-bar">
-<input id="search" placeholder="Search shop, food, fashion..." oninput="filterShops()">
-<select id="cat" onchange="filterShops()"><option value="">All</option><option>Food</option><option>Fashion</option><option>Services</option><option>Real Estate</option><option>Fumigation</option><option>Electronics</option></select>
-</div>
-<div id="map"></div>
-<div class="shops" id="shops"></div>
-<button class="add-btn" onclick="openAdd()">+</button>
-
-<div class="modal" id="addModal">
-<div class="modal-box">
-<h3>Add Your Shop</h3>
-<input id="sName" placeholder="Business Name">
-<select id="sCat"><option>Food</option><option>Fashion</option><option>Services</option><option>Real Estate</option><option>Fumigation</option><option>Electronics</option></select>
-<input id="sAddr" placeholder="Address (e.g., Ikeja, Lagos)">
-<input id="sPhone" placeholder="WhatsApp Number (234...)">
-<textarea id="sDesc" placeholder="What you sell for Pi"></textarea>
-<input id="sLat" placeholder="Latitude (optional)">
-<input id="sLng" placeholder="Longitude (optional)">
-<button onclick="saveShop()">Add to Map - Free</button>
-<button style="background:#eee;color:#333" onclick="closeAdd()">Cancel</button>
-<p style="font-size:11px;color:#666;margin-top:8px">Your shop go show after Pi Team verify. Pi KYC vendors only.</p>
-</div>
-</div>
-
+<div class="header"><h1>📍 PiMarket Naija</h1><button onclick="piLogin()" id="lb">Connect Pi</button></div>
+<div class="search"><input id="q" placeholder="Search shop, food..." oninput="show()"><select id="cat" onchange="show()"><option value="">All</option><option>Food</option><option>Fashion</option><option>Fumigation</option><option>Services</option><option>Real Estate</option></select></div>
+<div id="map">Loading map...</div>
+<div class="shops" id="list"></div>
+<button class="add" onclick="document.getElementById('m').classList.add('show')">+</button>
+<div class="modal" id="m"><div class="box"><h3>Add Shop</h3><input id="n" placeholder="Business Name"><select id="c"><option>Food</option><option>Fashion</option><option>Fumigation</option><option>Services</option><option>Real Estate</option></select><input id="a" placeholder="Address e.g Ikeja"><input id="p" placeholder="WhatsApp 234..."><textarea id="d" placeholder="What you sell for Pi"></textarea><button onclick="add()">Add to Map</button><button style="background:#eee;color:#333" onclick="document.getElementById('m').classList.remove('show')">Cancel</button></div></div>
 <script>
-const clientId="6aQyNTrOJtfljn6ujItzvj2hJ5d-NweBiq5xbLhD5x8";
-let map=L.map('map').setView([6.5244,3.3792],11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-let markers=[];
-let shops=JSON.parse(localStorage.getItem('piShops')||'[]');
-if(shops.length==0){
-shops=[
-{name:"Mama Gold Food - Ikeja",cat:"Food",addr:"Computer Village, Ikeja",phone:"2348012345678",desc:"Rice, swallow, accept Pi 100%",lat:6.5965,lng:3.342,verified:true},
-{name:"Fashion Hub Yaba",cat:"Fashion",addr:"Yaba Market, Lagos",phone:"2348098765432",desc:"Senator wears, Pi payment",lat:6.507,lng:3.379,verified:true},
-{name:"God's Grace Fumigation",cat:"Fumigation",addr:"Lekki, Lagos",phone:"2348030001111",desc:"Fumigation & cleaning - Pi accepted",lat:6.44,lng:3.47,verified:false},
-{name:"Pi Real Estate PH",cat:"Real Estate",addr:"GRA, Port Harcourt",phone:"2348022223333",desc:"Land & house - Pay small Pi, balance fiat",lat:4.82,lng:7.01,verified:true}
+let shops=[
+{name:"Mama Gold Food - Ikeja",cat:"Food",addr:"Computer Village Ikeja",phone:"2348012345678",desc:"Rice, swallow - Pi 100%",lat:6.5965,lng:3.342,ver:true},
+{name:"Fashion Hub Yaba",cat:"Fashion",addr:"Yaba Market",phone:"2348098765432",desc:"Senator wears - Pi",lat:6.507,lng:3.379,ver:true},
+{name:"Grace Fumigation",cat:"Fumigation",addr:"Lekki Lagos",phone:"2348030001111",desc:"Fumigation & cleaning - Pi",lat:6.44,lng:3.47,ver:false},
+{name:"Pi Real Estate PH",cat:"Real Estate",addr:"GRA PH",phone:"2348022223333",desc:"Land & house - Pi",lat:4.82,lng:7.01,ver:true}
 ];
+let map;
+setTimeout(()=>{
+map=L.map('map').setView([6.5244,3.3792],11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+show();
+},500);
+function show(){
+let list=document.getElementById('list'); if(!list) return;
+list.innerHTML='';
+let qq=document.getElementById('q').value.toLowerCase();
+let cc=document.getElementById('cat').value;
+let f=shops.filter(s=>(!qq||s.name.toLowerCase().includes(qq)||s.desc.toLowerCase().includes(qq))&&(!cc||s.cat==cc));
+f.forEach(s=>{
+if(map) L.marker([s.lat,s.lng]).addTo(map).bindPopup(s.name);
+list.innerHTML+=`<div class="card"><b>${s.name}</b> ${s.ver?'<span class="badge">✓ Verified</span>':''} <small style="background:#f3e5f5;color:#673ab7;padding:2px 6px;border-radius:8px">${s.cat}</small><div style="font-size:12px;color:#666;margin:4px 0">📍 ${s.addr}<br>📝 ${s.desc}</div><div class="btns"><a class="wa" href="https://wa.me/${s.phone}?text=Hi%20from%20PiMarket%20Naija" target="_blank">WhatsApp</a><a class="di" href="https://maps.google.com/?q=${s.lat},${s.lng}" target="_blank">Direction</a></div></div>`;
+});
 }
-function render(){
-const list=document.getElementById('shops'); list.innerHTML='';
-markers.forEach(m=>map.removeLayer(m)); markers=[];
-const q=document.getElementById('search').value.toLowerCase();
-const c=document.getElementById('cat').value;
-shops.filter(s=>{
-return (!q||s.name.toLowerCase().includes(q)||s.desc.toLowerCase().includes(q)) && (!c||s.cat==c);
-}).forEach(s=>{
-const m=L.marker([s.lat,s.lng]).addTo(map).bindPopup(`
+function add(){
+let s={name:document.getElementById('n').value||'My Shop',cat:document.getElementById('c').value,addr:document.getElementById('a').value||'Lagos',phone:document.getElementById('p').value||'234',desc:document.getElementById('d').value||'Pi accepted',lat:6.5244+(Math.random()-0.5)*0.5,lng:3.3792+(Math.random()-0.5)*0.5,ver:false};
+shops.unshift(s); document.getElementById('m').classList.remove('show'); show(); alert('Added!');
+}
+function piLogin(){if(typeof Pi==='undefined'){alert('Open in Pi Browser');return;} Pi.init({version:"2.0"}); Pi.authenticate(['username'],a=>{document.getElementById('lb').innerText='@'+a.user.username})}
+</script>
+</body>
+</html>
