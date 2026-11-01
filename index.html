@@ -1,36 +1,88 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PiMarket Naija</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spend Pi Nigeria Map - Find Pi Merchants</title>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-body{margin:0;font-family:system-ui;background:#0f172a;color:white}
-header{padding:12px;background:#1e293b;display:flex;justify-content:space-between}
-#map{height:300px} .card{background:#1e293b;margin:10px;padding:12px;border-radius:10px}
-.btn{padding:8px 12px;border-radius:8px;border:none;margin-right:6px}
-.wa{background:#25D366;color:white} .dir{background:#3b82f6;color:white}
-#search{width:90%;margin:10px;padding:10px;border-radius:8px;border:none}
+:root{--purple:#6B21A8;--light:#F3E8FF;--gold:#FACC15;--green:#22C55E}
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+body{background:#f5f0ff}
+.header{background:var(--purple);color:white;padding:16px;text-align:center;position:sticky;top:0;z-index:10}
+.header h1{font-size:22px}
+.header p{font-size:13px;opacity:.9;margin-top:4px}
+.city-bar{display:flex;gap:8px;overflow-x:auto;padding:12px;background:white;position:sticky;top:68px;z-index:9;border-bottom:1px solid #e9d5ff}
+.city-btn{padding:8px 16px;border-radius:20px;border:1px solid var(--purple);background:white;color:var(--purple);white-space:nowrap;cursor:pointer;font-weight:600;font-size:13px}
+.city-btn.active{background:var(--purple);color:white}
+.search-box{padding:12px;background:white;display:flex;gap:8px}
+.search-box input{flex:1;padding:12px;border-radius:10px;border:1px solid #d8b4fe;outline:none}
+.btn-pi{background:var(--gold);border:none;padding:12px 18px;border-radius:10px;font-weight:bold;cursor:pointer}
+.merchant{background:white;margin:10px;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.merchant-top{display:flex;gap:12px;align-items:center}
+.merchant-img{width:56px;height:56px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:24px}
+.merchant h3{font-size:16px;color:#1e1b4b}
+.merchant meta{font-size:12px;color:#6b7280;display:block;margin-top:2px}
+.actions{display:flex;gap:8px;margin-top:12px}
+.btn{flex:1;padding:10px;border-radius:10px;border:none;font-weight:600;cursor:pointer;font-size:13px}
+.btn-wa{background:var(--green);color:white}
+.btn-dir{background:var(--purple);color:white}
+.footer{text-align:center;padding:20px;font-size:12px;color:#6b7280}
+.add-btn{position:fixed;bottom:20px;right:20px;background:var(--purple);color:white;padding:14px 20px;border-radius:30px;font-weight:bold;text-decoration:none;box-shadow:0 4px 12px rgba(107,33,168,.4)}
+.verified{font-size:10px;background:#dcfce7;color:#166534;padding:2px 6px;border-radius:10px;margin-left:6px}
 </style>
 </head>
 <body>
-<header><b>PiMarket Naija</b>
-<button id="lb" onclick="piLogin()" style="background:#8b5cf6;color:white;border:none;padding:8px 14px;border-radius:8px">Connect Pi</button>
-</header>
-<input id="search" placeholder="Search food, fashion..." oninput="filterShops()">
-<div id="map"></div>
+<div class="header">
+<h1>π Spend Pi Nigeria Map</h1>
+<p>Find Verified Pi Merchants Across Nigeria • 60M Pioneers</p>
+</div>
+<div class="city-bar">
+<button class="city-btn active" onclick="filterCity('All')">All Nigeria</button>
+<button class="city-btn" onclick="filterCity('Lagos')">Lagos</button>
+<button class="city-btn" onclick="filterCity('Abuja')">Abuja</button>
+<button class="city-btn" onclick="filterCity('Port Harcourt')">PH</button>
+<button class="city-btn" onclick="filterCity('Kano')">Kano</button>
+<button class="city-btn" onclick="filterCity('Ibadan')">Ibadan</button>
+<button class="city-btn" onclick="filterCity('Enugu')">Enugu</button>
+</div>
+<div class="search-box">
+<input id="search" placeholder="Search food, fashion, fumigation..." oninput="render()">
+<button class="btn-pi" onclick="authPi()">π Login</button>
+</div>
 <div id="list"></div>
+<div class="footer">
+PiMarket Naija • Built by @tgidchi • Lagos<br>Pay with Pi Coin • Secure • Instant<br><br>App Version 2.0<br>
+<a href="/privacy.html">Privacy Policy</a>
+</div>
+<a class="add-btn" href="https://wa.me/234000000000?text=Hello%20I%20want%20to%20list%20my%20shop" target="_blank">+ Add Shop</a>
 <script>
-const shops=[{name:"Mama Gold Food - Ikeja",cat:"food",lat:6.6018,lng:3.3515,wa:"2348000000001",addr:"Ikeja"},{name:"Fashion Hub - Yaba",cat:"fashion",lat:6.5095,lng:3.3792,wa:"2348000000002",addr:"Yaba"},{name:"CleanPro Fumigation - Bariga",cat:"fumigation",lat:6.5294,lng:3.3801,wa:"2348000000003",addr:"Bariga"},{name:"Lekki Real Estate",cat:"real estate",lat:6.4698,lng:3.5852,wa:"2348000000004",addr:"Lekki"}];
-var map=L.map('map').setView([6.5244,3.3792],11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-function render(list){document.getElementById('list').innerHTML='';list.forEach(s=>{L.marker([s.lat,s.lng]).addTo(map).bindPopup(s.name);document.getElementById('list').innerHTML+=`<div class="card"><b>${s.name} ✓</b><br><small>${s.addr}</small><br><br><button class="btn wa" onclick="window.open('https://wa.me/${s.wa}')>WhatsApp</button><button class="btn dir" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}')>Direction</button></div>`;});}
-render(shops);
-function filterShops(){let q=document.getElementById('search').value.toLowerCase();render(shops.filter(s=>s.name.toLowerCase().includes(q)||s.cat.includes(q)));}
-function piLogin(){if(typeof Pi==='undefined'){alert('Open inside Pi Browser');return;}Pi.init({version:"2.0",sandbox:false});Pi.authenticate(['username']).then(function(auth){let uname=auth.user.username;document.getElementById('lb').innerText='@'+uname;alert('Welcome @'+uname);}).catch(e=>alert('Login failed '+e));}
+const Pi=window.Pi; if(Pi){ Pi.init({version:"2.0", sandbox:true}); }
+const merchants=[
+{city:"Lagos", name:"Ada's Pi Groceries", cat:"Groceries", area:"Surulere", rating:"4.8", emoji:"🛒", wa:"2348012345678"},
+{city:"Lagos", name:"TechHub Lagos", cat:"Electronics", area:"Ikeja", rating:"4.6", emoji:"📱", wa:"2348023456789"},
+{city:"Lagos", name:"Oga Chef Meals", cat:"Food", area:"Yaba", rating:"4.9", emoji:"🍲", wa:"2348034567890"},
+{city:"Lagos", name:"FumiCare Services", cat:"Fumigation", area:"Lekki", rating:"4.7", emoji:"🧹", wa:"2348045678901"},
+{city:"Abuja", name:"Abuja Pi Food Hub", cat:"Food", area:"Wuse 2", rating:"4.7", emoji:"🍛", wa:"2348067890123"},
+{city:"Abuja", name:"Capital Fumigation", cat:"Fumigation", area:"Garki", rating:"4.6", emoji:"🏠", wa:"2348078901234"},
+{city:"Port Harcourt", name:"PH Pi Mart", cat:"Groceries", area:"GRA", rating:"4.5", emoji:"🛍️", wa:"2348090123456"},
+{city:"Kano", name:"Kano Pi Traders", cat:"Groceries", area:"Sabon Gari", rating:"4.6", emoji:"🌾", wa:"2348112345678"},
+{city:"Ibadan", name:"Ibadan Food Spot", cat:"Food", area:"Bodija", rating:"4.7", emoji:"🍲", wa:"2348123456789"},
+{city:"Enugu", name:"Enugu Fashion Plug", cat:"Fashion", area:"Independence Layout", rating:"4.8", emoji:"👕", wa:"2348134567890"},
+];
+let currentCity="All";
+function filterCity(c){ currentCity=c; document.querySelectorAll('.city-btn').forEach(b=>b.classList.remove('active')); event.target.classList.add('active'); render(); }
+function render(){
+ const q=document.getElementById('search').value.toLowerCase();
+ const list=document.getElementById('list');
+ const filtered=merchants.filter(m=>{ const matchCity=currentCity==='All'||m.city===currentCity; const matchSearch=!q||m.name.toLowerCase().includes(q)||m.cat.toLowerCase().includes(q); return matchCity&&matchSearch; });
+ list.innerHTML=filtered.map(m=>`
+ <div class="merchant">
+  <div class="merchant-top"><div class="merchant-img">${m.emoji}</div><div><h3>${m.name} <span class="verified">✓ VERIFIED</span></h3><meta>${m.rating}★ • ${m.cat} • ${m.area}, ${m.city}</meta></div></div>
+  <div class="actions"><button class="btn btn-wa" onclick="window.open('https://wa.me/${m.wa}?text=Hello%20${encodeURIComponent(m.name)}%20I%20want%20to%20pay%20with%20Pi','_blank')">WhatsApp</button><button class="btn btn-dir" onclick="window.open('https://maps.google.com/?q=${m.area}+${m.city}','_blank')">Direction</button></div>
+ </div>`).join('');
+} render();
+function authPi(){ if(!Pi){ alert('Open inside Pi Browser'); return; } Pi.authenticate(['username','payments'], ()=>{}).then(a=>alert('Welcome @'+a.user.username)).catch(e=>alert(e)); }
 </script>
 </body>
-</html>
+  </html>
